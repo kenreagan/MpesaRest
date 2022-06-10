@@ -61,3 +61,7 @@ class StartService(AbstractPaymentService):
 
     def download_report(self, format, start_date, end_date):
         pass
+
+    def check_transaction_status(self, transaction_code):
+        pass
+
