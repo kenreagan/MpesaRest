@@ -1,2 +1,1 @@
-[name]
-Lumuli Ken Reagan
+contribute by creating a pull request

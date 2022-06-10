@@ -48,15 +48,31 @@ app.prompt_payment_for_service(
 ```
 
 ##### Download Report For the Transactions
+Download different formats of your transaction available formats include:
+- csv
+- xlsx
+
+A Time limit selection of your transaction records is also available
 
 ```python
 import datetime
 
-app.download_report(format=['excel', 'CSV'], start_date=datetime.datetime.today(), end_date=datetime.datetime)
+from MpesaRest import Mpesa
+
+config = {
+    'consumer_key': "YOUR_CONSUMER_KEY",
+    'consumer_secret': "YOUR_CONSUMER_SECRET",
+    'business_code': "YOUR_BUSINESS_CODE"
+}
+
+mpesa = Mpesa(**config)
+
+mpesa.download_report(format=['excel', 'CSV'], start_date=datetime.datetime.today(), end_date=datetime.datetime)
 ```
 
+```python
+
 ```
-echo "{
-    "message": "payment success"
-}"
-```
+
+##### Contribution
+Contribute by creating pull request

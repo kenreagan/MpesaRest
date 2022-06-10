@@ -1,4 +1,5 @@
 from MpesaRest.utils import AbstractPaymentService, Validator
+from typing import Dict, Union, Iterable
 
 class DictValidator(Validator):
     def __init__(self):
@@ -20,10 +21,8 @@ class StartService(AbstractPaymentService):
     def isvalid_client(self) -> bool:
         return self.validate_details().status_code == 200 and self.validate_details().json() is not None
 
-    def prompt_payment_for_service(self, values):
+    def prompt_payment_for_service(self, values: Union[Iterable, Dict]):
         """
-        Prompt users to accept payment for the service you offer
-        You need to create your credentials from the safaricom Developer Portal
         >>> config = {
         ...     'consumer_key': '<YOURCONSUMERKEY>',
         ...     'consumer_secret': '<YOURCONSUMERSECRET>',
