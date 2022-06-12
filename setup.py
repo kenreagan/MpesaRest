@@ -1,9 +1,9 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 setup(
     name='MpesaRest',
-    version='0.0.1',
+    version='0.0.2',
     description="An interaction of the Safaricom Daraja Api with Python",
     long_description=open('DESCRIPTION.txt').read(),
     author='Lumuli Ken Reagan',
@@ -20,5 +20,11 @@ setup(
       "Intended audience :: Developers",
       "Programming Language :: python :: pypy",
       "Operating System :: OS Independent"
-    ]
+    ],
+    py_modules=[
+        "managedb"
+    ],
+    entry_points = {
+        'console_scripts': ['MpesaRest=managedb:main']
+    }
 )

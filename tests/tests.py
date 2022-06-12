@@ -38,6 +38,8 @@ class TestRestServices(unittest.TestCase):
     def testTransaction(self):
         pass
 
+    def testdatabasecreation(self):
+        pass
 
 
 if __name__ == '__main__':
