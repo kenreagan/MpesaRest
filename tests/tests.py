@@ -1,6 +1,10 @@
 import unittest
 from MpesaRest import Mpesa
 import os
+from MpesaRest.models import Base
+from sqlalchemy import create_engine
+
+base = os.path.abspath(os.path.dirname(__file__))
 
 
 class TestRestServices(unittest.TestCase):
@@ -10,10 +14,15 @@ class TestRestServices(unittest.TestCase):
             'consumer_key': os.environ.get('CONSUMER_KEY') or 'GfcDOBUOM4oFzQpmq6QUYL2TR8rJXhvM',
             'consumer_secret': os.environ.get('CONSUMER_SECRET') or "66olbx4MCiDMfoIz"
         }
+        self.engine = create_engine(
+            'sqlite:///test.sqlite'
+        )
+        Base.metadata.create_all(self.engine)
         self.app = Mpesa(**config)
 
     def tearDown(self) -> None:
-        pass
+        Base.metadata.drop_all(self.engine)
+        os.unlink('test.sqlite')
 
     def testApplicationCreation(self):
         self.assertIsNotNone(self.app.consumer_secret)
@@ -25,6 +34,10 @@ class TestRestServices(unittest.TestCase):
 
     def testValidationOfPayload(self):
         pass
+
+    def testTransaction(self):
+        pass
+
 
 
 if __name__ == '__main__':

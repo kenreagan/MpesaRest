@@ -1,16 +1,31 @@
 ### Mpesa Rest Api
 A special interaction with the Safaricom daraja Api using python
-suitable for business payment integration. create your consumer key and consumer secret from the  
-[https://developer.safaricom.com](safaricom daraja client portal)
+suitable for business payment integration. create your consumer key and consumer secret from the
+[safaricom daraja developer's portal](https://developer.safaricom.com)
 
-##### Installation
+#### Installation
 
 ```commandline
 pip3 install MpesaRest
 ```
-##### Usage
-###### Instantiate B2C to client
-Prompt user to Accept Payment for your service
+
+#### Initialization
+Initialize database to store transaction records for easy retrieval
+```commandline
+Mpesarest --create
+```
+#### Drop Database table
+```commandline
+MpesaRest --destroy
+```
+
+#### Run Tests
+```commandline
+Mpesarest test --verbose
+```
+#### Usage
+##### Instantiate Business to client Lipa na Mpesa Stk Push
+Prompt user to Accept Payment for your service using lipa na mpesa
 
 ```python
 from MpesaRest import Mpesa
@@ -47,6 +62,42 @@ app.prompt_payment_for_service(
 )
 ```
 
+##### Reverse Mpesa Transaction
+```python
+from MpesaRest import Mpesa
+
+config = {
+        'consumer_key': "YOUR_CONSUMER_KEY",
+        'consumer_secret': "YOUR_CONSUMER_SECRET",
+        'business_code': "YOUR_BUSINESS_CODE"
+    }
+
+app = Mpesa(**config)
+
+app.prompt_payment_for_service({
+    'name': 'lumuli',
+    'phone': '+254794784462',
+    'amount': 3000
+})
+
+app.reverse_transaction(3000, '+254794784462', 'reversal for purchase of goods worth 300')
+```
+
+##### Request payment from clients
+```python
+from MpesaRest import Mpesa
+
+config = {
+        'consumer_key': "YOUR_CONSUMER_KEY",
+        'consumer_secret': "YOUR_CONSUMER_SECRET",
+        'business_code': "YOUR_BUSINESS_CODE"
+    }
+
+app = Mpesa(**config)
+
+app.request_payment()
+```
+
 ##### Download Report For the Transactions
 Download different formats of your transaction available formats include:
 - csv
@@ -70,8 +121,19 @@ mpesa = Mpesa(**config)
 mpesa.download_report(format=['excel', 'CSV'], start_date=datetime.datetime.today(), end_date=datetime.datetime)
 ```
 
+#### Check Account Balance status
 ```python
+from MpesaRest import Mpesa
 
+config = {
+    'consumer_key': "YOUR_CONSUMER_KEY",
+    'consumer_secret': "YOUR_CONSUMER_SECRET",
+    'business_code': "YOUR_BUSINESS_CODE"
+}
+
+mpesa = Mpesa(**config)
+
+mpesa.check_account_balance()
 ```
 
 ##### Contribution

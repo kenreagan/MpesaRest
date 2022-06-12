@@ -63,7 +63,7 @@ class DatabaseMapper(MutableMapping):
     def __delitem__(self, key):
         with DatabaseContextManager() as context:
             instance = delete(
-
+                self.table
             ).where(
                 id=key
             ).first()
@@ -166,16 +166,17 @@ class AbstractPaymentService(ABC):
         }
         requests.post(self.url, headers=headers, data=body)
 
-    def request_payment(self):
+    # request payment to client
+    def request_payment(self, PartyA, PartyB, Amount, remarks):
         self.url = 'https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest'
         body = {
             "InitiatorName": "",
             "SecurityCredential": "",
             "CommandID": "",
-            "Amount": "",
-            "PartyA": "",
-            "PartyB": "",
-            "Remarks": "",
+            "Amount": Amount,
+            "PartyA": PartyA,
+            "PartyB": PartyB,
+            "Remarks": remarks,
             "QueueTimeOutURL": "",
             "ResultURL": "",
             "Occasion": ""
@@ -203,19 +204,20 @@ class AbstractPaymentService(ABC):
         }
         requests.post(self.url, data=post_request_body, headers=headers)
 
-    def reverse_transaction(self):
+    # reverse Mpesa Transaction
+    def reverse_transaction(self, amount, ReceiverParty, remarks):
         self.url = 'https://sandbox.safaricom.co.ke/mpesa/reversal/v1/request'
         body = {
             "Initiator": "",
             "SecurityCredential": "",
             "CommandID": "TransactionReversal",
             "TransactionID": "",
-            "Amount": "",
-            "ReceiverParty": "",
+            "Amount": amount,
+            "ReceiverParty": ReceiverParty,
             "RecieverIdentifierType": "4",
             "ResultURL": "",
             "QueueTimeOutURL": "",
-            "Remarks": "",
+            "Remarks": remarks,
             "Occasion": ""
         }
         access_token = self.validate_details().json()
@@ -226,18 +228,18 @@ class AbstractPaymentService(ABC):
 
         requests.post(self.url, data=body, headers=headers)
 
-    def query_transaction_status(self):
+    def query_transaction_status(self, partyA, remarks, transactionId):
         self.url = 'https://sandbox.safaricom.co.ke/mpesa/transactionstatus/v1/query'
         body = {
             "Initiator": "",
             "SecurityCredential": "",
             "CommandID": "TransactionStatusQuery",
-            "TransactionID": "",
-            "PartyA": "",
+            "TransactionID": transactionId,
+            "PartyA": partyA,
             "IdentifierType": "",
             "ResultURL": "",
             "QueueTimeOutURL": "",
-            "Remarks": "",
+            "Remarks": remarks,
             "Occasion": ""
         }
         access_token = self.validate_details().json()

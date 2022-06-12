@@ -1,5 +1,15 @@
-from MpesaRest.utils import AbstractPaymentService, Validator
+from MpesaRest.utils import AbstractPaymentService, Validator, DatabaseMapper
 from typing import Dict, Union, Iterable
+import logging
+
+logging.basicConfig(
+    filename='mpesarest.log',
+    format="[%(level)s] %(message)s"
+)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 
 class DictValidator(Validator):
     def __init__(self):
@@ -16,6 +26,23 @@ class DictValidator(Validator):
                 raise error
         else:
             raise ValueError(f'Expected {value!r} to be of type dict')
+
+
+class IntValidator(Validator):
+    def __init__(self):
+        min_value = None
+        max_value = None
+
+    def validate(self, value):
+        pass
+
+class stringValidator(Validator):
+    def __init__(self):
+        max_val = None
+        min_val = None
+
+    def validate(self, value):
+        pass
 
 class StartService(AbstractPaymentService):
     def isvalid_client(self) -> bool:
@@ -54,14 +81,27 @@ class StartService(AbstractPaymentService):
                     )
                 else:
                     for errors in validator.errors:
-                        print(errors)
+                        logger.critical(errors)
             else:
                 for items in values:
                     self.prompt_payment_for_service(items)
 
-    def download_report(self, format, start_date, end_date):
-        pass
+    def check_lipa_na_mpesa_status(self, code):
+        self.query_stkpush_status(code)
 
-    def check_transaction_status(self, transaction_code):
-        pass
+    def check_transaction_status(self, PartyA, remarks, transactionId):
+        self.query_transaction_status(PartyA, remarks, transactionId)
 
+    def request_from_customer(self, PartyA:str, PartyB:str, Amount: float, Remarks: str):
+        self.request_payment(PartyA, PartyB, Amount, Remarks)
+
+    def reverse_customer_transaction(self, amount, recipient: str, remarks: str):
+        self.reverse_transaction(amount, recipient, remarks)
+
+    def check_account_balance(self):
+        return self.get_account_balance()
+
+    @staticmethod
+    def download_report(format, start_date, end_date):
+        mapper = DatabaseMapper()
+        return mapper

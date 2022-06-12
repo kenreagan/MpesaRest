@@ -5,8 +5,9 @@ Base = declarative_base()
 
 
 class TransactionModels(Base):
-    id = Column(Integer, primary_kley=True, nullable=False),
-    amount = Column(Float),
+    __tablename__ = 'TransactionModels'
+    transaction_id = Column(Integer, primary_key=True, nullable=False)
+    amount = Column(Float)
     date_created = Column(DateTime)
     description = Column(String, nullable=False, default=None)
     client = Column(String, nullable=False)
