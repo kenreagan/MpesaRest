@@ -9,20 +9,6 @@ suitable for business payment integration. create your consumer key and consumer
 pip3 install MpesaRest
 ```
 
-#### Initialization
-Initialize database to store transaction records for easy retrieval
-```commandline
-Mpesarest --create
-```
-#### Drop Database table
-```commandline
-MpesaRest --destroy
-```
-
-#### Run Tests
-```commandline
-Mpesarest test --verbose
-```
 #### Usage
 ##### Instantiate Business to client Lipa na Mpesa Stk Push
 Prompt user to Accept Payment for your service using lipa na mpesa
@@ -41,7 +27,7 @@ app = Mpesa(**config)
 
 app.prompt_payment_for_service({
     'name': 'lumuli',
-    'phone': '+254794784462',
+    'phone': '254794784462',
     'amount': 3000
 })
 
@@ -50,12 +36,12 @@ app.prompt_payment_for_service(
     [
         {
             'name': 'lumuli',
-            'phone': '+254794784462',
+            'phone': '254794784462',
             'amount': 3000
         },
         {
             'name': 'test',
-            'phone': '+254794784462',
+            'phone': '254794784462',
             'amount': 6000
         }
     ]
@@ -96,29 +82,6 @@ config = {
 app = Mpesa(**config)
 
 app.request_payment()
-```
-
-##### Download Report For the Transactions
-Download different formats of your transaction available formats include:
-- csv
-- xlsx
-
-A Time limit selection of your transaction records is also available
-
-```python
-import datetime
-
-from MpesaRest import Mpesa
-
-config = {
-    'consumer_key': "YOUR_CONSUMER_KEY",
-    'consumer_secret': "YOUR_CONSUMER_SECRET",
-    'business_code': "YOUR_BUSINESS_CODE"
-}
-
-mpesa = Mpesa(**config)
-
-mpesa.download_report(format=['excel', 'CSV'], start_date=datetime.datetime.today(), end_date=datetime.datetime)
 ```
 
 #### Check Account Balance status

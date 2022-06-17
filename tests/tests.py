@@ -12,7 +12,8 @@ class TestRestServices(unittest.TestCase):
         config = {
             'business_code': os.environ.get('BUSINESS_CODE') or '174379',
             'consumer_key': os.environ.get('CONSUMER_KEY') or 'GfcDOBUOM4oFzQpmq6QUYL2TR8rJXhvM',
-            'consumer_secret': os.environ.get('CONSUMER_SECRET') or "66olbx4MCiDMfoIz"
+            'consumer_secret': os.environ.get('CONSUMER_SECRET') or "66olbx4MCiDMfoIz",
+            'phone_number': '254 794784462'
         }
         self.engine = create_engine(
             'sqlite:///test.sqlite'

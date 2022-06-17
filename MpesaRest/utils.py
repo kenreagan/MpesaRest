@@ -80,11 +80,12 @@ class DatabaseMapper(MutableMapping):
 
 
 class AbstractPaymentService(ABC):
-    def __init__(self, consumer_key: str, consumer_secret: str, business_code: str):
+    def __init__(self, consumer_key: str, consumer_secret: str, business_code: str, phone_number):
         self.url = None
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
         self.business_code = business_code
+        self.phone_number = phone_number
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}(key={self.consumer_key}, secret={self.consumer_secret}," \
@@ -111,7 +112,7 @@ class AbstractPaymentService(ABC):
         if self.isvalid_client():
             payment_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
             passkey: str = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
-            data_to_encode = self.business_code + passkey + payment_time
+            data_to_encode = str(self.business_code) + passkey + payment_time
             online_password = base64.b64encode(data_to_encode.encode())
             decode_password = online_password.decode('utf-8')
             my_dict = {
@@ -124,7 +125,7 @@ class AbstractPaymentService(ABC):
         }
 
     # lipa na mpesa request processing
-    def initialize_mpesa_stk_push_request(self, clientname: str, clientphonenumber: str, amount: int) -> int:
+    def initialize_mpesa_stk_push_request(self, clientname: str, clientphonenumber: str, amount: int) -> requests.Response:
         api_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
         access_token = self.validate_details().json()
         headers = {
@@ -137,16 +138,16 @@ class AbstractPaymentService(ABC):
             "Timestamp": self.start_validation()['payment_time'],
             "TransactionType": "CustomerPayBillOnline",
             "Amount": amount,
-            "PartyA": clientname,
-            "PartyB": self.business_code,
+            "PartyA": clientphonenumber,
+            "PartyB": 174379,
             "PhoneNumber": clientphonenumber,
-            "CallBackURL": "https://sandbox.safaricom.co.ke/mpesa/",
-            "AccountReference": self.business_code,
-            "TransactionDesc": f"Confirm the payment of {amount!r} to {self.business_code!r} by entering your Mpesa pin"
+            "CallBackURL": "https://mydomain.com/path",
+            "AccountReference": "TaskKe",
+            "TransactionDesc": "Cool"
         }
 
-        response = requests.post(api_url, json=request, headers=headers)
-        return response.status_code
+        return requests.post(api_url, json=request, headers=headers)
+
 
     def get_account_balance(self):
         self.url = 'https://sandbox.safaricom.co.ke/mpesa/accountbalance/v1/query'
@@ -164,7 +165,7 @@ class AbstractPaymentService(ABC):
         headers = {
             "Authorization": "Bearer %s" % access_token['access_token']
         }
-        requests.post(self.url, headers=headers, data=body)
+        return requests.post(self.url, headers=headers, data=body)
 
     # request payment to client
     def request_payment(self, PartyA, PartyB, Amount, remarks):
@@ -185,15 +186,15 @@ class AbstractPaymentService(ABC):
         headers = {
             "Authorization: %s" % access_token['access_token']
         }
-        requests.post(self.url, data=body, headers=headers)
+        return requests.post(self.url, data=body, headers=headers)
 
-    def initialize_b2c_requests(self, amount: str):
+    def initialize_b2c_requests(self, amount: str, client: str):
         # authentication: Bearer Access Token
         self.url = 'https://sandbox.safaricom.co.ke/mpesa/c2b/v1/simulate'
         post_request_body = {
             "Command ID": "CustomerPayBillOnline",
             "Amount": amount,
-            "Msisdn": "254724628580",
+            "Msisdn": client,
             "BillRefNumber": "00000",
             "ShortCode": self.business_code
         }
@@ -202,7 +203,7 @@ class AbstractPaymentService(ABC):
         headers = {
             "Authorization": "Bearer %s" % access_token['access_token']
         }
-        requests.post(self.url, data=post_request_body, headers=headers)
+        return requests.post(self.url, data=post_request_body, headers=headers)
 
     # reverse Mpesa Transaction
     def reverse_transaction(self, amount, ReceiverParty, remarks):
@@ -226,7 +227,7 @@ class AbstractPaymentService(ABC):
             "Authorization": "Bearer %s" % access_token['access_token']
         }
 
-        requests.post(self.url, data=body, headers=headers)
+        return requests.post(self.url, data=body, headers=headers)
 
     def query_transaction_status(self, partyA, remarks, transactionId):
         self.url = 'https://sandbox.safaricom.co.ke/mpesa/transactionstatus/v1/query'
@@ -246,9 +247,9 @@ class AbstractPaymentService(ABC):
         headers = {
             "Authorization": "Bearer %s" % access_token['access_token']
         }
-        requests.post(self.url, headers=headers, data=body)
+        return requests.post(self.url, headers=headers, data=body)
 
-    def query_stkpush_status(self, payment_code: Any) -> None:
+    def query_stkpush_status(self, payment_code: Any):
         """
         Query Status of the client Payment [Completed, Pending, Cancelled]
         :param payment_code:
@@ -267,7 +268,7 @@ class AbstractPaymentService(ABC):
         headers = {
             "Authorization": access_token['access_token']
         }
-        requests.post(self.url, data=body, headers=headers)
+        return requests.post(self.url, data=body, headers=headers)
 
     @abstractmethod
     def isvalid_client(self):

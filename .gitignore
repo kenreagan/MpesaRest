@@ -16,3 +16,5 @@ build/
 *.gitignore.swp
 
 .idea/
+
+.env

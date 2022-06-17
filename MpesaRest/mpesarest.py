@@ -4,7 +4,7 @@ import logging
 
 logging.basicConfig(
     filename='mpesarest.log',
-    format="[%(level)s] %(message)s"
+    format="[%(levelname)s] %(message)s"
 )
 
 logger = logging.getLogger(__name__)
@@ -21,9 +21,9 @@ class DictValidator(Validator):
                 error = ValueError(f'expected {value["amount"]!r} to be a float or integer')
                 self.errors.append(error)
                 raise error
-            if not len(value['phone'].strip(' ')) == 13:
-                error = ValueError("Enter The Correct Number Format start with +2547")
-                raise error
+            # if not len(value['phone'].strip(' ')) == 13:
+            #     error = ValueError("Enter The Correct Number Format start with +2547")
+            #     raise error
         else:
             raise ValueError(f'Expected {value!r} to be of type dict')
 
@@ -74,11 +74,17 @@ class StartService(AbstractPaymentService):
             if isinstance(values, dict):
                 validator.validate(value=values)
                 if not validator.errors:
-                    self.initialize_mpesa_stk_push_request(
+                    response =  self.initialize_mpesa_stk_push_request(
                         values['name'],
                         values['phone'],
                         values['amount']
                     )
+                    ## Client
+                    if response.status_code == 200:
+                        return response.json()
+                    return {
+                        "Message": "An error Occurred"
+                    }
                 else:
                     for errors in validator.errors:
                         logger.critical(errors)
@@ -86,22 +92,19 @@ class StartService(AbstractPaymentService):
                 for items in values:
                     self.prompt_payment_for_service(items)
 
+
     def check_lipa_na_mpesa_status(self, code):
-        self.query_stkpush_status(code)
+        return self.query_stkpush_status(code)
 
     def check_transaction_status(self, PartyA, remarks, transactionId):
-        self.query_transaction_status(PartyA, remarks, transactionId)
+        return self.query_transaction_status(PartyA, remarks, transactionId)
 
     def request_from_customer(self, PartyA:str, PartyB:str, Amount: float, Remarks: str):
-        self.request_payment(PartyA, PartyB, Amount, Remarks)
+        request = self.request_payment(PartyA, PartyB, Amount, Remarks)
+        return request.json()
 
     def reverse_customer_transaction(self, amount, recipient: str, remarks: str):
-        self.reverse_transaction(amount, recipient, remarks)
+        return self.reverse_transaction(amount, recipient, remarks)
 
     def check_account_balance(self):
         return self.get_account_balance()
-
-    @staticmethod
-    def download_report(format, start_date, end_date):
-        mapper = DatabaseMapper()
-        return mapper
