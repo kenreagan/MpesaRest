@@ -66,7 +66,7 @@ app.prompt_payment_for_service({
     'amount': 3000
 })
 
-app.reverse_transaction(3000, '+254794784462', 'reversal for purchase of goods worth 300')
+app.reverse_transaction(3000, 'transaction_code', 'reversal for purchase of goods worth 300')
 ```
 
 ##### Request payment from clients
