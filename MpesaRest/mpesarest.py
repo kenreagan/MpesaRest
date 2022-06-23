@@ -53,8 +53,7 @@ class StringValidator(Validator):
 
 
 class AbstractPaymentService(ABC):
-    def __init__(self, consumer_key: str, consumer_secret: str, business_code: str, phone_number):
-        self.url = None
+    def __init__(self, consumer_key: str, consumer_secret: str, business_code, phone_number):
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
         self.business_code = business_code
@@ -106,7 +105,7 @@ class AbstractPaymentService(ABC):
             "TransactionType": "CustomerPayBillOnline",
             "Amount": amount,
             "PartyA": clientphonenumber,
-            "PartyB": 174379,
+            "PartyB": self.business_code,
             "PhoneNumber": clientphonenumber,
             "CallBackURL": "https://mydomain.com/path", # add custom callback for status
             "AccountReference": "TaskKe",
@@ -232,9 +231,10 @@ class StartService(AbstractPaymentService):
                     )
                     req = requests.post(api_url, body, headers=self.headers)
                     response = req.json()
+
                     if req.status_code != 200:
                         out_ = {
-                            'errors': [response['ErrorMessage']]
+                            'errors': [response['errorMessage']]
                         }
                         return out_
                     out_ = {

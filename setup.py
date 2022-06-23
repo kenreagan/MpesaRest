@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='MpesaRest',
-    version='0.0.2',
+    version='0.0.3',
     description="An interaction of the Safaricom Daraja Api with Python",
     long_description=open('DESCRIPTION.txt').read(),
     author='Lumuli Ken Reagan',
