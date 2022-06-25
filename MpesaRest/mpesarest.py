@@ -1,15 +1,36 @@
 import re
-from MpesaRest.utils import Validator
 from typing import Dict, Union, Iterable
 import requests
 from requests.auth import HTTPBasicAuth
 import datetime
 from abc import ABC, abstractmethod
 import base64
+from dataclasses import dataclass
+
+
+class Validator(ABC):
+
+    def __init__(self):
+        self.det = None
+
+    def set_det(self, owner, detail):
+        self.det = f'_{detail}'
+
+    def __set__(self, instance, value):
+        self.validate(value)
+        setattr(instance, self.det, value)
+
+    def __get__(self, instance, owner):
+        return getattr(instance, self.det)
+
+    @abstractmethod
+    def validate(self, value):
+        pass
 
 
 class DictValidator(Validator):
     def __init__(self):
+        super(DictValidator, self).__init__()
         self.errors = []
 
     def validate(self, value):
@@ -28,6 +49,7 @@ class DictValidator(Validator):
 
 class IntValidator(Validator):
     def __init__(self):
+        super(IntValidator, self).__init__()
         self.min_value = 1
         self.max_value = 300000
 
@@ -41,6 +63,7 @@ class IntValidator(Validator):
 
 class StringValidator(Validator):
     def __init__(self):
+        super(StringValidator, self).__init__()
         self.max_value = 100
         self.min_value = 1
 
@@ -52,16 +75,14 @@ class StringValidator(Validator):
             raise ValueError('Value Outside range maximum range is %d' % self.max_value)
 
 
+@dataclass(repr=True)
 class AbstractPaymentService(ABC):
-    def __init__(self, consumer_key: str, consumer_secret: str, business_code, phone_number):
-        self.consumer_key = consumer_key
-        self.consumer_secret = consumer_secret
-        self.business_code = business_code
-        self.phone_number = phone_number
-
-    def __repr__(self):
-        return f"{self.__class__.__qualname__}(key={self.consumer_key}, secret={self.consumer_secret}," \
-               f" code={self.business_code}) "
+    consumer_key: str
+    consumer_secret: str
+    business_code: str
+    phone_number: str
+    passcode: str
+    call_back: str
 
     def validate_details(self) -> requests.Response:
         """
@@ -69,9 +90,9 @@ class AbstractPaymentService(ABC):
         :return: response.Response
         """
 
-        self.url: str = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+        url: str = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
         response = requests.get(
-            self.url,
+            url,
             auth=HTTPBasicAuth(self.consumer_key, self.consumer_secret)
         )
         return response
@@ -107,7 +128,7 @@ class AbstractPaymentService(ABC):
             "PartyA": clientphonenumber,
             "PartyB": self.business_code,
             "PhoneNumber": clientphonenumber,
-            "CallBackURL": "https://mydomain.com/path", # add custom callback for status
+            "CallBackURL": self.call_back,
             "AccountReference": "TaskKe",
             "TransactionDesc": "Cool"
         }
@@ -146,7 +167,7 @@ class AbstractPaymentService(ABC):
 
     def initialize_c2b_requests(self, amount: str, client: str):
         # authentication: Bearer Access Token
-        self.url = 'https://sandbox.safaricom.co.ke/mpesa/c2b/v1/simulate'
+        url = 'https://sandbox.safaricom.co.ke/mpesa/c2b/v1/simulate'
         post_request_body = {
             "Command ID": "CustomerPayBillOnline",
             "Amount": amount,
@@ -205,9 +226,8 @@ class AbstractPaymentService(ABC):
 
 
 class StartService(AbstractPaymentService):
-    def __init__(self, business_code, phone_number, consumer_key, consumer_secret) -> None:
-        super(StartService, self).__init__(business_code=business_code, phone_number=phone_number,
-                                           consumer_key=consumer_key, consumer_secret=consumer_secret)
+    def __init__(self, *args, **kwargs) -> None:
+        super(StartService, self).__init__(*args, **kwargs)
         if self.isvalid_client():
             self.access_token: str = self.validate_details().json()['access_token']
             self.headers = {

@@ -1,1 +1,4 @@
-A Close interaction of the daraja api with python
+A Close interaction of the daraja api with python.
+
+Interact with the  safaricom developers api with python. The custom url callbacks will allow for easy intergration with
+your business applications.
