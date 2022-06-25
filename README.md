@@ -14,7 +14,7 @@ pip3 install MpesaRest
 Prompt user to Accept Payment for your service using lipa na mpesa
 
 ```python
-from MpesaRest import Mpesa
+from MpesaRest.mpesarest import StartService as Mpesa
 
 config = {
         'consumer_key': "YOUR_CONSUMER_KEY",
@@ -50,7 +50,7 @@ app.prompt_payment_for_service(
 
 ##### Reverse Mpesa Transaction
 ```python
-from MpesaRest import Mpesa
+from MpesaRest.mpesarest import StartService as Mpesa
 
 config = {
         'consumer_key': "YOUR_CONSUMER_KEY",
@@ -71,7 +71,7 @@ app.reverse_transaction(3000, 'transaction_code', 'reversal for purchase of good
 
 ##### Request payment from clients
 ```python
-from MpesaRest import Mpesa
+from MpesaRest.mpesarest import StartService as Mpesa
 
 config = {
         'consumer_key': "YOUR_CONSUMER_KEY",
@@ -86,7 +86,7 @@ app.request_payment()
 
 #### Check Account Balance status
 ```python
-from MpesaRest import Mpesa
+from MpesaRest.mpesarest import StartService as Mpesa
 
 config = {
     'consumer_key': "YOUR_CONSUMER_KEY",

@@ -214,6 +214,10 @@ class StartService(AbstractPaymentService):
                 "Authorization": "Bearer %s" % self.access_token
             }
 
+    def __repr__(self):
+        return f"{self.__class__.__qualname__}(" \
+               f"business code = {self.business_code}, phone_number={self.phone_number})"
+
     def isvalid_client(self) -> bool:
         return self.validate_details().status_code == 200 and self.validate_details().json() is not None
 
@@ -255,7 +259,7 @@ class StartService(AbstractPaymentService):
                     self.prompt_payment_for_service(items)
 
     def check_lipa_na_mpesa_status(self, code):
-        validator = IntValidator()
+        validator = StringValidator()
         if validator.validate(code):
             body = self.query_stkpush_status(code)
             url = 'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query'
