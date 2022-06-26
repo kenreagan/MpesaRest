@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from typing import Dict, Union, Iterable
 import requests
@@ -68,10 +70,10 @@ class StringValidator(Validator):
         self.min_value = 1
 
     def validate(self, value):
-        if int(value) < self.min_value:
+        if len(value) < self.min_value:
             raise ValueError('Value Outside range minimum range is %d' % self.min_value)
 
-        if int(value) > self.max_value:
+        if len(value) > self.max_value:
             raise ValueError('Value Outside range maximum range is %d' % self.max_value)
 
 
@@ -79,10 +81,14 @@ class StringValidator(Validator):
 class AbstractPaymentService(ABC):
     consumer_key: str
     consumer_secret: str
-    business_code: str
+    business_code: int
     phone_number: str
     passcode: str
     call_back: str
+    BusinessShortCode: str
+    Accountreference:str
+    environment: str
+
 
     def validate_details(self) -> requests.Response:
         """
@@ -118,9 +124,9 @@ class AbstractPaymentService(ABC):
         }
 
     # lipa na mpesa request processing
-    def initialize_mpesa_stk_push_request(self, clientphonenumber: str, amount: int) -> Dict[str, str]:
+    def initialize_mpesa_stk_push_request(self, clientphonenumber: str, amount: int, description: str) -> Dict[str, str]:
         request = {
-            "BusinessShortCode": self.business_code,
+            "BusinessShortCode": self.BusinessShortCode,
             "Password": self.start_validation()['password'],
             "Timestamp": self.start_validation()['payment_time'],
             "TransactionType": "CustomerPayBillOnline",
@@ -129,8 +135,8 @@ class AbstractPaymentService(ABC):
             "PartyB": self.business_code,
             "PhoneNumber": clientphonenumber,
             "CallBackURL": self.call_back,
-            "AccountReference": "TaskKe",
-            "TransactionDesc": "Cool"
+            "AccountReference": self.Accountreference,
+            "TransactionDesc": description
         }
 
         return request
@@ -149,14 +155,14 @@ class AbstractPaymentService(ABC):
         return body
 
     # request payment to client
-    def request_payment(self, PartyA, PartyB, Amount, remarks):
+    def request_payment(self, PartyA, Amount, remarks):
         body = {
             "InitiatorName": "",
             "SecurityCredential": "",
             "CommandID": "",
             "Amount": Amount,
             "PartyA": PartyA,
-            "PartyB": PartyB,
+            "PartyB": self.business_code,
             "Remarks": remarks,
             "QueueTimeOutURL": "",
             "ResultURL": "",
@@ -167,7 +173,6 @@ class AbstractPaymentService(ABC):
 
     def initialize_c2b_requests(self, amount: str, client: str):
         # authentication: Bearer Access Token
-        url = 'https://sandbox.safaricom.co.ke/mpesa/c2b/v1/simulate'
         post_request_body = {
             "Command ID": "CustomerPayBillOnline",
             "Amount": amount,
@@ -178,21 +183,20 @@ class AbstractPaymentService(ABC):
         return post_request_body
 
     # reverse Mpesa Transaction
-    def reverse_transaction(self, amount, ReceiverParty, remarks):
+    def reverse_transaction(self, amount, remarks, security_credential):
         body = {
             "Initiator": "",
             "SecurityCredential": "",
             "CommandID": "TransactionReversal",
             "TransactionID": "",
             "Amount": amount,
-            "ReceiverParty": ReceiverParty,
+            "ReceiverParty": self.business_code,
             "RecieverIdentifierType": "4",
             "ResultURL": "",
             "QueueTimeOutURL": "",
             "Remarks": remarks,
             "Occasion": ""
         }
-
         return body
 
     def query_transaction_status(self, partyA, remarks, transactionId):
@@ -233,6 +237,7 @@ class StartService(AbstractPaymentService):
             self.headers = {
                 "Authorization": "Bearer %s" % self.access_token
             }
+        self._env = 'api' if self.environment == 'development' else 'safaricom'
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}(" \
@@ -244,14 +249,17 @@ class StartService(AbstractPaymentService):
     def prompt_payment_for_service(self, values: Union[Iterable, Dict[str, str]]):
         if self.isvalid_client():
             validator = DictValidator()
-            api_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+            string_validator = StringValidator()
+            api_url = f"https://{self._env}.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
 
             if isinstance(values, dict):
                 validator.validate(value=values)
+                string_validator.validate(values['description'])
                 if not validator.errors:
                     body =  self.initialize_mpesa_stk_push_request(
                         values['phone'],
-                        values['amount']
+                        values['amount'],
+                        values['description']
                     )
                     req = requests.post(api_url, body, headers=self.headers)
                     response = req.json()
@@ -282,7 +290,7 @@ class StartService(AbstractPaymentService):
         validator = StringValidator()
         if validator.validate(code):
             body = self.query_stkpush_status(code)
-            url = 'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query'
+            url = f'https://{self._env}.safaricom.co.ke/mpesa/stkpushquery/v1/query'
             response = requests.post(
                 url,
                 data=body,
@@ -292,7 +300,7 @@ class StartService(AbstractPaymentService):
 
 
     def check_transaction_status(self, PartyA, remarks, transactionId):
-        url = 'https://sandbox.safaricom.co.ke/mpesa/transactionstatus/v1/query'
+        url = f'https://{self._env}.safaricom.co.ke/mpesa/transactionstatus/v1/query'
         body = self.query_transaction_status(PartyA, remarks, transactionId)
         req = requests.post(
             url,
@@ -301,9 +309,9 @@ class StartService(AbstractPaymentService):
         )
         return req.json()
 
-    def request_from_customer(self, PartyA:str, PartyB:str, Amount: float, Remarks: str):
-        url = 'https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest'
-        body = self.request_payment(PartyA, PartyB, Amount, Remarks)
+    def request_from_customer(self, PartyA:str, Amount: float, Remarks: str):
+        url = f'https://{self._env}.safaricom.co.ke/mpesa/b2c/v1/paymentrequest'
+        body = self.request_payment(PartyA, Amount, Remarks)
         req = requests.post(
             url,
             data=body,
@@ -311,9 +319,9 @@ class StartService(AbstractPaymentService):
         )
         return req.json()
 
-    def reverse_customer_transaction(self, amount, recipient: str, remarks: str):
-        body = self.reverse_transaction(amount, recipient, remarks)
-        url = 'https://sandbox.safaricom.co.ke/mpesa/reversal/v1/request'
+    def reverse_customer_transaction(self, amount, remarks: str, cred):
+        body = self.reverse_transaction(amount, remarks, cred)
+        url = f'https://{self._env}.safaricom.co.ke/mpesa/reversal/v1/request'
         req = requests.post(
             url,
             data=body,
@@ -322,11 +330,25 @@ class StartService(AbstractPaymentService):
         return req.json()
 
     def check_account_balance(self):
-        url = 'https://sandbox.safaricom.co.ke/mpesa/accountbalance/v1/query'
+        url = f'https://{self._env}.safaricom.co.ke/mpesa/accountbalance/v1/query'
         body = self.get_account_balance()
         req = requests.post(
             url,
             data=body,
             headers=self.headers
         )
+        return req.json()
+
+    def initialize_buy_goods(self, amount, client):
+        url = f'https://{self._env}.safaricom.co.ke/mpesa/c2b/v1/simulate'
+        body = self.initialize_c2b_requests(
+            amount,
+            client
+        )
+
+        req = requests.post(
+            url,
+            data=body
+        )
+
         return req.json()
