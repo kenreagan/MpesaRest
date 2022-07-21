@@ -108,20 +108,17 @@ class AbstractPaymentService(ABC):
         Prepare client details once the credentials are valid, else returns invalid credentials
         :return: Dict[str, str]
         """
-        if self.isvalid_client():
-            payment_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-            passkey: str = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
-            data_to_encode = str(self.business_code) + passkey + payment_time
-            online_password = base64.b64encode(data_to_encode.encode())
-            decode_password = online_password.decode('utf-8')
-            my_dict = {
-                "password": decode_password,
-                "payment_time": payment_time
-            }
-            return my_dict
-        return {
-            'Message': "Invalid credentials"
+        payment_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        passkey: str = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
+        data_to_encode = str(self.business_code) + passkey + payment_time
+        online_password = base64.b64encode(data_to_encode.encode())
+        decode_password = online_password.decode('utf-8')
+        my_dict = {
+            "password": decode_password,
+            "payment_time": payment_time
         }
+        return my_dict
+        
 
     # lipa na mpesa request processing
     def initialize_mpesa_stk_push_request(self, clientphonenumber: str, amount: int, description: str) -> Dict[str, str]:
@@ -224,30 +221,28 @@ class AbstractPaymentService(ABC):
         }
         return body
 
-    @abstractmethod
-    def isvalid_client(self):
-        pass
-
 
 class StartService(AbstractPaymentService):
     def __init__(self, *args, **kwargs) -> None:
         super(StartService, self).__init__(*args, **kwargs)
-        if self.isvalid_client():
-            self.access_token: str = self.validate_details().json()['access_token']
+        detail_validator = self.validate_details()
+        self.access_token = None
+        if detail_validator.status_code == 200:
+            self.access_token: str = detail_validator.json()['access_token']
             self.headers = {
                 "Authorization": "Bearer %s" % self.access_token
             }
-        self._env = 'api' if self.environment == 'development' else 'safaricom'
+            self._env = 'api' if self.environment == 'development' else 'safaricom'
+        return {
+            "Error": "Invalid client"
+        }
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}(" \
                f"business code = {self.business_code}, phone_number={self.phone_number})"
 
-    def isvalid_client(self) -> bool:
-        return self.validate_details().status_code == 200 and self.validate_details().json() is not None
-
     def prompt_payment_for_service(self, values: Union[Iterable, Dict[str, str]]):
-        if self.isvalid_client():
+        if self.access_token is not None:
             validator = DictValidator()
             string_validator = StringValidator()
             api_url = f"https://{self._env}.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
