@@ -233,9 +233,7 @@ class StartService(AbstractPaymentService):
                 "Authorization": "Bearer %s" % self.access_token
             }
             self._env = 'api' if self.environment == 'development' else 'safaricom'
-        return {
-            "Error": "Invalid client"
-        }
+
 
     def __repr__(self):
         return f"{self.__class__.__qualname__}(" \
