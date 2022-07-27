@@ -152,14 +152,14 @@ class AbstractPaymentService(ABC):
         return body
 
     # request payment to client
-    def request_payment(self, PartyA, Amount, remarks):
+    def request_payment(self, clientphonenumber, Amount, remarks):
         body = {
             "InitiatorName": "",
             "SecurityCredential": "",
             "CommandID": "",
             "Amount": Amount,
-            "PartyA": PartyA,
-            "PartyB": self.business_code,
+            "PartyA": self.business_code,
+            "PartyB": clientphonenumber,
             "Remarks": remarks,
             "QueueTimeOutURL": "",
             "ResultURL": "",
@@ -225,10 +225,10 @@ class AbstractPaymentService(ABC):
 class StartService(AbstractPaymentService):
     def __init__(self, *args, **kwargs) -> None:
         super(StartService, self).__init__(*args, **kwargs)
-        detail_validator = self.validate_details()
+        self.detail_validator = self.validate_details()
         self.access_token = None
         if detail_validator.status_code == 200:
-            self.access_token: str = detail_validator.json()['access_token']
+            self.access_token: str = self.detail_validator.json()['access_token']
             self.headers = {
                 "Authorization": "Bearer %s" % self.access_token
             }
@@ -259,7 +259,9 @@ class StartService(AbstractPaymentService):
 
                     if req.status_code != 200:
                         out_ = {
-                            'errors': [response['errorMessage']]
+                            'errors': [
+                                response['errorMessage']
+                            ]
                         }
                         return out_
                     out_ = {
@@ -302,9 +304,9 @@ class StartService(AbstractPaymentService):
         )
         return req.json()
 
-    def request_from_customer(self, PartyA:str, Amount: float, Remarks: str):
+    def initialize_business_to_client(self, PartyA:str, Amount: float, Remarks: str):
         url = f'https://{self._env}.safaricom.co.ke/mpesa/b2c/v1/paymentrequest'
-        body = self.request_payment(PartyA, Amount, Remarks)
+        body = self.request_payment(clientphonenumber, Amount, Remarks)
         req = requests.post(
             url,
             data=body,
