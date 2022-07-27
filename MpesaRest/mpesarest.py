@@ -232,7 +232,7 @@ class StartService(AbstractPaymentService):
             self.headers = {
                 "Authorization": "Bearer %s" % self.access_token
             }
-            self._env = 'api' if self.environment == 'development' else 'safaricom'
+            self._env = 'api' if self.environment == 'production' else 'sandbox'
 
 
     def __repr__(self):
