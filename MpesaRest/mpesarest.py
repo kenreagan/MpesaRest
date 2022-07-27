@@ -227,7 +227,7 @@ class StartService(AbstractPaymentService):
         super(StartService, self).__init__(*args, **kwargs)
         self.detail_validator = self.validate_details()
         self.access_token = None
-        if detail_validator.status_code == 200:
+        if self.detail_validator.status_code == 200:
             self.access_token: str = self.detail_validator.json()['access_token']
             self.headers = {
                 "Authorization": "Bearer %s" % self.access_token
