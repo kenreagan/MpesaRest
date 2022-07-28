@@ -7,7 +7,6 @@ from requests.auth import HTTPBasicAuth
 import datetime
 from abc import ABC, abstractmethod
 import base64
-from dataclasses import dataclass
 
 
 class Validator(ABC):
@@ -77,18 +76,25 @@ class StringValidator(Validator):
             raise ValueError('Value Outside range maximum range is %d' % self.max_value)
 
 
-@dataclass(repr=True)
 class AbstractPaymentService(ABC):
-    consumer_key: str
-    consumer_secret: str
-    business_code: int
-    phone_number: str
-    passcode: str
-    call_back: str
-    BusinessShortCode: str
-    Accountreference:str
-    environment: str
-
+    def __init__(self, consumer_key: str, consumer_secret: str, business_code: int, phone_number: str, passcode: str, call_back: str, BusinessShortCode: str, Accountreference:str, environment: str):
+        self.consumer_key = consumer_key
+        self.consumer_secret = consumer_secret
+        self.business_code = business_code
+        self.phone_number = phone_number
+        self.passcode = passcode
+        self.call_back = call_back
+        self.BusinessShortCode = BusinessShortCode
+        self.Accountreference = Accountreference
+        self.environment = environment
+        self.detail_validator = self.validate_details()
+        if self.detail_validator.status_code == 200:
+            self.access_token: str = self.detail_validator.json()['access_token']
+            self.headers = {
+                "Authorization": "Bearer %s" % self.access_token
+            }
+            self._env = 'api' if self.environment == 'production' else 'sandbox'
+        print(self.access_token)
 
     def validate_details(self) -> requests.Response:
         """
@@ -223,16 +229,6 @@ class AbstractPaymentService(ABC):
 
 
 class StartService(AbstractPaymentService):
-    def __init__(self, *args, **kwargs) -> None:
-        super(StartService, self).__init__(*args, **kwargs)
-        self.detail_validator = self.validate_details()
-        self.access_token = None
-        if self.detail_validator.status_code == 200:
-            self.access_token: str = self.detail_validator.json()['access_token']
-            self.headers = {
-                "Authorization": "Bearer %s" % self.access_token
-            }
-            self._env = 'api' if self.environment == 'production' else 'sandbox'
 
 
     def __repr__(self):
